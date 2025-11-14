@@ -10,7 +10,7 @@ import io
 from gatys import gatys_style_transfer, INPUT_IMAGE_TYPES
 
 
-VALID_FILE_TYPES = ['png', 'jpg', 'jpeg', 'tif', 'tiff']
+VALID_FILE_TYPES = ['png', 'jpeg', 'tiff']
 
 
 def stimage_to_pil(st_image):
@@ -78,6 +78,8 @@ def process_filename(filename):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~ DEFAULT VALUES ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+TRANSFER_PARAMETERS_PREPEND = "transfer_parameters_"
+
 DEFAULT_TRANSFER_PARAMETERS = {
     'input_type': 'Content image',
     'style_weight': 1000000, 
@@ -89,22 +91,21 @@ DEFAULT_TRANSFER_PARAMETERS = {
     'rng_seed': 42,
     'display_loss_steps': 50,
     'image_file_type': 'png',
-    'display_loss': False,
-    'image_file_name': 'style_transferred',  # TODO make these a separate spot then this dictionary
-    'image_file_type': 'png'  # TODO make these a separate spot then this dictionary
+    'display_loss': False
 }
 
 def reset_defaults_parameters():
     """
     Resets all of the parameters to be the default parameters
     """
-    print("Got here")
-    st.session_state.transfer_parameters = {key: value for key, value in DEFAULT_TRANSFER_PARAMETERS.items()}  # TODO make this reset the dropdowns
+    for key, value in DEFAULT_TRANSFER_PARAMETERS.items():
+        st.session_state[TRANSFER_PARAMETERS_PREPEND + key] = value
 
 
 # Create a deep copy of the default parameters and put them in the session state
-if 'transfer_parameters' not in st.session_state:
+if 'default_params_set' not in st.session_state:
     reset_defaults_parameters()
+    st.session_state.default_params_set = True
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~ START OF UI ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,39 +144,44 @@ param_button_text = "Display customization options" if not st.session_state.disp
 st.button(param_button_text, on_click=toggle_state, args=('display_parameters',))
 
 # Customization parameters
+# TODO make default values appear properly when menus opened
 if st.session_state.display_parameters:
     st.header("Customize Parameters for Style Transfer")
     param_col_1, param_col_2 = st.columns(spec=2)
     with param_col_1:
-        st.session_state.transfer_parameters['input_type'] = st.selectbox(
+        st.selectbox(
             "Input image ('base' for style transfer). Default is content image",
             (input_img for input_img in INPUT_IMAGE_TYPES),
-            index=0  # Default is content image  # TODO make the value update when selected
+            index=0,
+            key=f'{TRANSFER_PARAMETERS_PREPEND}input_type'
         )
-        st.session_state.transfer_parameters['num_steps'] = st.number_input(
+        st.number_input(
             "Number of steps (iterations) to apply style transfer. More steps means more blending. Default is 300, range is [50, 1000].",
             min_value=50,
             max_value=1000,
-            value=st.session_state.transfer_parameters['num_steps'],
             step=50,
-            format="%d"
+            format="%d",
+            value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}num_steps'],
+            key=f'{TRANSFER_PARAMETERS_PREPEND}num_steps'
         )
     with param_col_2:
-        st.session_state.transfer_parameters['style_weight'] = st.number_input(
+        st.number_input(
             "Weight to apply to the style during transfer. Default is 1,000,000. Range is [10,000, 10,000,000]",
             min_value=100,
             max_value=10000000,
-            value=st.session_state.transfer_parameters['style_weight'],
             step=250,
-            format='%d'
+            format='%d',
+            value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}style_weight'],
+            key=f'{TRANSFER_PARAMETERS_PREPEND}style_weight'
         )
-        st.session_state.transfer_parameters['content_weight'] = st.number_input(
+        st.number_input(
             "Weight to apply to the content during transfer. Default is 1. Range is [1, 100]",
             min_value=1,
             max_value=100,
-            value=st.session_state.transfer_parameters['content_weight'],
             step=1,
-            format='%d'
+            format='%d',
+            value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}content_weight'],
+            key=f'{TRANSFER_PARAMETERS_PREPEND}content_weight'
         )
 
     # Advanced options (requires button press to limit default available options)
@@ -187,56 +193,52 @@ if st.session_state.display_parameters:
         st.header("Advanced Customization options")
         adv_col_1, adv_col_2 = st.columns(spec=2)
         with adv_col_1:
-            st.session_state.transfer_parameters['height'] = st.number_input(
+            st.number_input(
                 "Image height. Default is 512. Range is [32, 2048]",
                 min_value=32,
                 max_value=2048,
-                value=st.session_state.transfer_parameters['height'],
                 step=1,
-                format='%d'
+                format='%d',
+                value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}height'],
+                key=f'{TRANSFER_PARAMETERS_PREPEND}height'
             )
-            st.session_state.transfer_parameters['width'] = st.number_input(
+            st.number_input(
                 "Image width. Default is 512. Range is [32, 2048]",
                 min_value=32,
                 max_value=2048,
-                value=st.session_state.transfer_parameters['width'],
                 step=1,
-                format='%d'
+                format='%d',
+                value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}width'],
+                key=f'{TRANSFER_PARAMETERS_PREPEND}width'
             )
-            st.session_state.transfer_parameters['device'] = st.text_input(
+            st.text_input(
                 "Device to use. Defaults to 'auto'. Recommend to only use 'auto', which automatically selects CPU/GPU, unless you are an advanced PyTorch user.",
-                value=st.session_state.transfer_parameters['device']
-            )
-            st.session_state.transfer_parameters['rng_seed'] = st.number_input(
-                "Random seed to use for training. Default is 42. Range is [0, 2^8 - 1] (for simplicity).",
-                min_value=0,
-                max_value=(2**32 - 1),
-                value=st.session_state.transfer_parameters['rng_seed'],
-                step=1,
-                format='%d'
+                value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}device'],
+                key=f'{TRANSFER_PARAMETERS_PREPEND}device'
             )
         with adv_col_2:
-            st.session_state.transfer_parameters['image_file_name'] = process_filename(st.text_input(
-                "File name for downloaded image (file types will be ignored).",
-                value='style_transferred_image'  #TODO implement this in a separate spot
-            ))
-            st.session_state.transfer_parameters['image_file_type'] = st.selectbox(
-                "File type to save as. Default is .png",
-                (extension for extension in VALID_FILE_TYPES),
-                index=0  # Default is png # TODO make the value update when selected
+            st.number_input(
+                "Random seed to use for training. Default is 42. Range is [0, 1000] (for simplicity).",
+                min_value=0,
+                max_value=1000,
+                step=1,
+                format='%d',
+                value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}rng_seed'],
+                key=f'{TRANSFER_PARAMETERS_PREPEND}rng_seed'
             )
-            st.session_state.transfer_parameters['display_loss'] = st.checkbox(
+            st.checkbox(  # TODO implement the loss display
                 'Display loss at training steps?',
-                value=st.session_state.transfer_parameters['display_loss']  # TODO implement display
+                key=f'{TRANSFER_PARAMETERS_PREPEND}display_loss'
             )
-            if st.session_state.transfer_parameters['display_loss']:
-                display_loss_steps = st.number_input(
+            if st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}display_loss']:
+                st.number_input(
                     "Step interval to display loss at. Default is 50. Range is [1, number of steps]",
                     min_value=1,
-                    max_value=st.session_state.transfer_parameters['num_steps'],
-                    value=st.session_state.transfer_parameters['display_loss_steps'],
+                    max_value=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'num_steps'],
                     step=1,
-                    format='%d'
+                    format='%d',
+                    value=st.session_state[f'{TRANSFER_PARAMETERS_PREPEND}display_loss_steps'],
+                    key=f'{TRANSFER_PARAMETERS_PREPEND}display_loss_steps'
                 )
     
     # Button to reset the parameters to default
@@ -254,20 +256,20 @@ if content_image_stl is not None and style_image_stl is not None:
         style_transferred_image_pil = gatys_style_transfer(
             content_image_pil=content_image_pil, 
             style_image_pil=style_image_pil, 
-            input_type=st.session_state.transfer_parameters['input_type'],
-            style_weight=st.session_state.transfer_parameters['style_weight'], 
-            content_weight=st.session_state.transfer_parameters['content_weight'],
-            num_steps=st.session_state.transfer_parameters['num_steps'],
-            height=st.session_state.transfer_parameters['height'], 
-            width=st.session_state.transfer_parameters['width'],
-            device=st.session_state.transfer_parameters['device'], 
-            rng_seed=st.session_state.transfer_parameters['rng_seed'],
-            display_loss_steps=st.session_state.transfer_parameters['display_loss_steps']
+            input_type=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'input_type'],
+            style_weight=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'style_weight'], 
+            content_weight=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'content_weight'],
+            num_steps=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'num_steps'],
+            height=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'height'], 
+            width=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'width'],
+            device=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'device'], 
+            rng_seed=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'rng_seed'],
+            display_loss_steps=st.session_state[TRANSFER_PARAMETERS_PREPEND + 'display_loss_steps']
         )  # TODO Add option to display run losses (and a graph?)
 
         # Put the bytes image into the session state so that it persists if the user downloads the image
-        byte_image = pil_to_bytes(style_transferred_image_pil)  # TODO add option for file type changing
-        st.session_state.image_data = byte_image
+        st.session_state.pil_image = style_transferred_image_pil
+        
         st.rerun()  # Clears the note about style transfer running
 
 # Message before content and style images are displayed
@@ -276,13 +278,44 @@ else:
 
 
 # Display the style transferred image with a download button
-if 'image_data' in st.session_state:
-    image_file_name = f"{st.session_state.transfer_parameters['image_file_name']}.{st.session_state.transfer_parameters['image_file_type']}"
-    if st.session_state.image_data is not None:
-        st.image(st.session_state.image_data, caption='Style transferred image')
-        st.download_button(
-            label='Download style-transferred image',
-            data=st.session_state.image_data,
-            file_name=image_file_name, 
-            mime='image/png'
+if 'pil_image' in st.session_state:
+    # Set default name and file type
+    if 'image_file_name' not in st.session_state:
+        st.session_state.image_file_name = 'style_transfer_output'
+    if 'image_file_type' not in st.session_state:
+        st.session_state.image_file_type = 'png'
+    image_file_name = f"{st.session_state['image_file_name']}.{st.session_state['image_file_type']}"
+    
+    # Get the bytes image
+    st.session_state.bytes_image = pil_to_bytes(st.session_state.pil_image, 
+                                                st.session_state['image_file_type'])
+
+    # Displays the image
+    st.image(st.session_state.bytes_image, caption='Style transferred image')
+
+    # Provide options for file name and extension
+    name_col, type_col = st.columns(spec=2)
+    with name_col:
+        process_filename(st.text_input(
+            "File name for downloaded image (file types will be ignored).",
+            key='image_file_name'  
+        ))
+    with type_col:
+        st.selectbox(
+            "File type to save as. Default is .png",
+            (extension for extension in VALID_FILE_TYPES),
+            index=0,  # Default is png #
+            key='image_file_type'
         )
+    
+    # Update session image in case type changes from user selection
+    download_image = pil_to_bytes(st.session_state.pil_image, 
+                                    image_type=st.session_state['image_file_type'])
+
+
+    # Allows for download
+    st.download_button(
+        label='Download style-transferred image',
+        data=download_image,
+        file_name=image_file_name
+    )
