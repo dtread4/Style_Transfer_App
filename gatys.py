@@ -73,7 +73,7 @@ def set_device(device_name='auto'):
         device = torch.device(device_name)
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Performing style transfer with device: {device.type}")
+    print(f"Performing style transfer with device: {device.type}\n")
 
     # Set the device    
     torch.set_default_device(device)
