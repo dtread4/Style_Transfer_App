@@ -77,22 +77,6 @@ def set_device(device_name='auto'):
     return device
 
 
-def set_image_size(device):
-    """
-    Sets the size of the images to perform style transfer with based on the device being used
-    GPU (cuda) = (512, 512)
-    CPU = (128, 128)
-    Smaller images will be transferred faster when using the CPU
-
-    Args:
-        device: The device being used to perform style transfer
-
-    Returns:
-        The integer size of the image
-    """
-    return (512, 512) if device.type == 'cuda' else (128, 128)
-
-
 def prepare_image(image, image_size):
     """
     Loads an image with transforms applied
