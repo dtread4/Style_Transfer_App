@@ -13,9 +13,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from PIL import Image
-import matplotlib.pyplot as plt
-
 import torchvision.transforms as transforms
 from torchvision.models import vgg19, VGG19_Weights
 
@@ -136,26 +133,6 @@ def convert_tensor_to_pil_image(tensor_image):
     to_pil_image = transforms.ToPILImage()
     image_display = to_pil_image(image_display)
     return image_display
-
-
-def display_image(tensor_image, title=None):
-    """
-    Displays a tensor image
-
-    Args:
-        tensor_image: _description_
-        title: _description_. Defaults to None.
-    """
-    plt.ion()  # Interactive display updates
-
-    # Convert a copy of the image to PIL for display
-    image_display = convert_tensor_to_pil_image(tensor_image)
-
-    plt.imshow(image_display)
-    if title is not None:
-        plt.title(title)
-    plt.axis('off')
-    plt.pause(0.001)  # pausing so plots are updated properly
 
 
 class ContentLoss(nn.Module):
